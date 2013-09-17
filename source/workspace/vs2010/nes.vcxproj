@@ -62,7 +62,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\cpu.h" />
     <ClInclude Include="..\..\datatypes.h" />
-    <ClInclude Include="..\..\instruction_set.h" />
     <ClInclude Include="..\..\nes.h" />
   </ItemGroup>
   <ItemGroup>
