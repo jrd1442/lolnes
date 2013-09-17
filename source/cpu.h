@@ -1,45 +1,72 @@
+/* cpu.h
+**
+** The 2A03 microprocessor. For the full definition/implementation of the object, see cpu_*.cpp
+** files.
+*/
+
 #ifndef _NES_CPU_H_
 #define _NES_CPU_H_
 
 #include "datatypes.h"
 
+/* CPU:
+ *  Represents the NES' 2A03 chip.
+ */
 class CPU
 {
 public:
+	/* Constructor:
+	 *  Basic initializations happen here.
+	 */
 	CPU();
+
+	/* Tick:
+	 *  The standard instruction cycle (Fetch, Decode, Execute)
+	 */
 	void Tick();
 
 private:
+	///////////////////////////////////////////////////////////////////////////// cpu registers ///
+
 	struct Registers
 	{
-		word pc;
-		byte sp;
-		byte a;
-		byte x;
-		byte y;
+		word pc;  // program counter
+		byte sp;  // stack pointer
+		byte a;   // accumulator
+		byte x;   // index register x
+		byte y;   // index register y
 		
+		// processor status register
 		union
 		{
 			struct
 			{
-				unsigned n : 1;
-				unsigned v : 1;
-				unsigned   : 1;
-				unsigned b : 1;
-				unsigned d : 1;
-				unsigned i : 1;
-				unsigned z : 1;
-				unsigned c : 1;
+				unsigned n : 1;  // negative flag
+				unsigned v : 1;  // overflow flag
+				unsigned   : 1;  // reserved
+				unsigned b : 1;  // break command
+				unsigned d : 1;  // decimal mode
+				unsigned i : 1;  // interupt disable
+				unsigned z : 1;  // zero flag
+				unsigned c : 1;  // carry flag
 			};
 			
 			byte p;
 		};
 	} registers;
 
-	static const Registers EMPTY_REGISTERS;
+	static const Registers EMPTY_REGISTERS;  // zeroed registers
 
-	byte latency;
+	byte latency;  // used for simulating the number of cycles per instruction
 
+	///////////////////////////////////////////////////////////////////////// instruction table ///
+
+	// The program will read a byte-long instruction from the ROM, which will be the index into the
+	// instruction mapper table. Each instruction mapper entry holds the index into the instruction
+	// table. Each entry in the instruction table is a pointer to the function that performs the
+	// instruction.
+
+	// The Instruction values are indices into the instruction table
 	enum Instruction
 	{
 		INSTRUCTION_ADC = 0, INSTRUCTION_AND, INSTRUCTION_ASL, INSTRUCTION_BCC, INSTRUCTION_BCS, INSTRUCTION_BEQ, INSTRUCTION_BIT, INSTRUCTION_BMI,
@@ -54,6 +81,7 @@ private:
 		INSTRUCTION_UNDEFINED
 	};
 
+	// The address mode is passed along to the function
 	enum AddressMode
 	{
 		ADDRESSMODE_ACCUMULATOR = 0,
@@ -74,18 +102,22 @@ private:
 		ADDRESSMODE_UNDEFINED
 	};
 
-	struct InstructionTableEntry
+	// Mapper table entry. Both enums are small enough to fit within a byte of data
+	struct InstructionMapEntry
 	{
-		byte instruction;
-		byte addressMode;
+		byte instruction;  // enum Instruction value - compressed to a byte
+		byte addressMode;  // enum AddressMode value - compressed to a byte
 	};
 	
-	static const unsigned short        INSTRUCTION_TABLE_SIZE = 256;
-	static const InstructionTableEntry UNDEFINED_INSTRUCTION_TABLE_ENTRY;
-	static const InstructionTableEntry instructionTable[INSTRUCTION_TABLE_SIZE];
+	// define instruction table constants
+	static const unsigned short      INSTRUCTION_TABLE_SIZE = 256;
+	static const InstructionMapEntry UNDEFINED_INSTRUCTION_MAP_ENTRY;
+	static const InstructionMapEntry INSTRUCTION_MAP[INSTRUCTION_TABLE_SIZE];
 
 	typedef void (CPU::*PFNInstruction)(const byte &);
 	static const PFNInstruction INSTRUCTIONS[NUM_INSTRUCTION];
+
+	////////////////////////////////////////////////////////////////////////////// instructions ///
 
 	void ADC(const byte &addressMode);
 	void AND(const byte &addressMode);
@@ -143,6 +175,6 @@ private:
 	void TXA(const byte &addressMode);
 	void TXS(const byte &addressMode);
 	void TYA(const byte &addressMode);
-};
+}; // class CPU
 
 #endif
